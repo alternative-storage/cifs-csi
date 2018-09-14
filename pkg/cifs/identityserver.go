@@ -5,5 +5,5 @@ import (
 )
 
 type identityServer struct {
-	*csicommon.DefaultNodeServer
+	*csicommon.DefaultIdentityServer
 }
