@@ -15,10 +15,23 @@ $ csc identity plugin-info --endpoint tcp://127.0.0.1:10000
 "csi-cifsplugin"	"0.3.0"
 ```
 
-#### NodePublish a volume
+#### NodeStage a volume
 ```
-$ export NFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
-$ export NFS_SHARE="Your NFS share"
+$ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
+$ export CIFS_SHARE="Your NFS share"
+$ export X_CSI_SECRETS=userID=test,userKey=password
+
+$ csc node stage --endpoint tcp://127.0.0.1:10000  --attrib server=$CIFS_SERVER --attrib share=$CIFS_SHARE cifstestvol
+cifstestvol
+```
+
+#### NodePublish a volume
+
+**NOTE**: You must stage a volume by above step.
+
+```
+$ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
+$ export CIFS_SHARE="Your NFS share"
 $ csc node publish --endpoint tcp://127.0.0.1:10000 --target-path /mnt/cifs --attrib server=$CIFS_SERVER --attrib share=$CIFS_SHARE cifstestvol
 cifstestvol
 ```
