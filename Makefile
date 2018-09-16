@@ -24,7 +24,7 @@ test:
 	 go vet github.com/alternative-storage/cifs-csi/pkg/...
 
 cifsplugin:
-	if [ ! -d ./vendor ]; then dep ensure; fi
+	if [ ! -d ./vendor ]; then dep ensure -vendor-only; fi
 	CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o  _output/cifsplugin ./cifs
 
 image-cifsplugin: cifsplugin
