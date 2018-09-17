@@ -39,12 +39,12 @@ func newVolumeOptions(volOptions map[string]string) (*volumeOptions, error) {
 
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	glog.Errorf("Create")
-	/*
-			if err := cs.validateCreateVolumeRequest(req); err != nil {
-				glog.Errorf("CreateVolumeRequest validation failed: %v", err)
-				return nil, err
-			}
+	if err := cs.validateCreateVolumeRequest(req); err != nil {
+		glog.Errorf("CreateVolumeRequest validation failed: %v", err)
+		return nil, err
+	}
 
+	/*
 		volOptions, err := newVolumeOptions(req.GetParameters())
 		if err != nil {
 			glog.Errorf("validation of volume options failed: %v", err)
@@ -73,4 +73,28 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 func newVolumeID() volumeID {
 	return volumeID("csi-cephfs-" + uuid.NewUUID().String())
+}
+
+func (cs *controllerServer) ValidateVolumeCapabilities(
+	ctx context.Context,
+	req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+	r := &csi.ValidateVolumeCapabilitiesResponse{
+		Supported: true,
+	}
+	// CIFS doesn't support Block volume
+	for _, cap := range req.VolumeCapabilities {
+		if t := cap.GetBlock(); t != nil {
+			r.Supported = false
+			break
+		}
+		if t := cap.GetMount(); t != nil {
+			// If a filesystem is given, it must be cifs
+			fs := t.GetFsType()
+			if fs != "" && fs != "cifs" {
+				r.Supported = false
+				break
+			}
+		}
+	}
+	return r, nil
 }
