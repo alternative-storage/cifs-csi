@@ -9,22 +9,6 @@ import (
 	"github.com/kubernetes-csi/drivers/pkg/csi-common"
 )
 
-type volumeOptions struct {
-	Monitors string `json:"monitors"`
-	Pool     string `json:"pool"`
-	RootPath string `json:"rootPath"`
-
-	Mounter         string `json:"mounter"`
-	ProvisionVolume bool   `json:"provisionVolume"`
-}
-
-const (
-	cephRootPrefix  = PluginFolder + "/controller/volumes/root-"
-	cephVolumesRoot = "csi-volumes"
-
-	namespacePrefix = "ns-"
-)
-
 const (
 	oneGB = 1073741824
 )
@@ -33,24 +17,12 @@ type controllerServer struct {
 	*csicommon.DefaultControllerServer
 }
 
-func newVolumeOptions(volOptions map[string]string) (*volumeOptions, error) {
-	return nil, nil
-}
-
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 	glog.Errorf("Create")
 	if err := cs.validateCreateVolumeRequest(req); err != nil {
 		glog.Errorf("CreateVolumeRequest validation failed: %v", err)
 		return nil, err
 	}
-
-	/*
-		volOptions, err := newVolumeOptions(req.GetParameters())
-		if err != nil {
-			glog.Errorf("validation of volume options failed: %v", err)
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-	*/
 
 	volId := newVolumeID()
 
@@ -72,7 +44,7 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 }
 
 func newVolumeID() volumeID {
-	return volumeID("csi-cephfs-" + uuid.NewUUID().String())
+	return volumeID("csi-cifs-" + uuid.NewUUID().String())
 }
 
 func (cs *controllerServer) ValidateVolumeCapabilities(
