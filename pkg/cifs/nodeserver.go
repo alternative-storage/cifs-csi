@@ -41,7 +41,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	stagingTargetPath := req.GetStagingTargetPath()
 	volId := volumeID(req.GetVolumeId())
-	glog.Infof("cephfs: volume %s is trying to create and mount %s", volId, stagingTargetPath)
+	glog.Infof("cifs: volume %s is trying to create and mount %s", volId, stagingTargetPath)
 
 	notMnt, err := mount.New("").IsLikelyNotMountPoint(stagingTargetPath)
 	if err != nil {
@@ -55,7 +55,7 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		}
 	}
 	if !notMnt {
-		glog.Infof("cephfs: volume %s is already mounted to %s, skipping", volId, stagingTargetPath)
+		glog.Infof("cifs: volume %s is already mounted to %s, skipping", volId, stagingTargetPath)
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 
@@ -94,6 +94,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	glog.Infof("publish")
 	targetPath := req.GetTargetPath()
+	volId := req.GetVolumeId()
+
 	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -107,17 +109,16 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	if !notMnt {
-		//	glog.Infof("cephfs: volume %s is already bind-mounted to %s", volId, targetPath)
-
+		glog.Infof("cifs: volume %s is already bind-mounted to %s", volId, targetPath)
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
 	if err = bindMount(req.GetStagingTargetPath(), req.GetTargetPath(), req.GetReadonly()); err != nil {
-		//		glog.Errorf("failed to bind-mount volume %s: %v", volId, err)
+		glog.Errorf("failed to bind-mount volume %s: %v", volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	//glog.Infof("cephfs: successfuly bind-mounted volume %s to %s", volId, targetPath)
+	glog.Infof("cifs: successfuly bind-mounted volume %s to %s", volId, targetPath)
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
@@ -199,7 +200,7 @@ func bindMount(from, to string, readOnly bool) error {
 }
 
 func execCommand(command string, args ...string) ([]byte, error) {
-	glog.V(4).Infof("cephfs: EXEC %s %s", command, args)
+	glog.V(4).Infof("cifs: EXEC %s %s", command, args)
 
 	cmd := exec.Command(command, args...)
 	return cmd.CombinedOutput()
@@ -208,7 +209,7 @@ func execCommand(command string, args ...string) ([]byte, error) {
 func execCommandAndValidate(program string, args ...string) error {
 	out, err := execCommand(program, args...)
 	if err != nil {
-		return fmt.Errorf("cephfs: %s failed with following error: %s\ncephfs: %s output: %s", program, err, program, out)
+		return fmt.Errorf("cifs: %s failed with following error: %s\ncifs: %s output: %s", program, err, program, out)
 	}
 
 	return nil
