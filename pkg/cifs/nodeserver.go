@@ -27,16 +27,12 @@ type volumeID string
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	glog.Infof("stage")
-	var (
-		err error
-	)
+	var err error
 
-	// TODO validate
-	/*
-		if err := validateNodeStageVolumeRequest(req); err != nil {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-	*/
+	if err = validateNodeStageVolumeRequest(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	// Configuration
 
 	stagingTargetPath := req.GetStagingTargetPath()
@@ -93,6 +89,11 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	glog.Infof("publish")
+
+	if err := validateNodePublishVolumeRequest(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	targetPath := req.GetTargetPath()
 	volId := req.GetVolumeId()
 
@@ -155,6 +156,10 @@ func getUserCredentials(secrets map[string]string) (*credentials, error) {
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
+	if err := validateNodeUnpublishVolumeRequest(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	targetPath := req.GetTargetPath()
 	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
 
@@ -177,12 +182,22 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (ns *nodeServer) NodeUnstageVolume(
-	ctx context.Context,
-	req *csi.NodeUnstageVolumeRequest) (
-	*csi.NodeUnstageVolumeResponse, error) {
+func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+	if err := validateNodeUnstageVolumeRequest(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 
-	return nil, status.Error(codes.Unimplemented, "")
+	stagingTargetPath := req.GetStagingTargetPath()
+	// Unmount the volume
+	if err := util.UnmountPath(stagingTargetPath, mount.New("")); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	os.Remove(stagingTargetPath)
+
+	glog.Infof("cephfs: successfuly umounted volume %s from %s", req.GetVolumeId(), stagingTargetPath)
+
+	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
 func bindMount(from, to string, readOnly bool) error {

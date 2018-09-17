@@ -43,6 +43,18 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 
 }
 
+func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+	if err := cs.validateDeleteVolumeRequest(req); err != nil {
+		glog.Errorf("DeleteVolumeRequest validation failed: %v", err)
+		return nil, err
+	}
+
+	// TODO
+
+	return &csi.DeleteVolumeResponse{}, nil
+
+}
+
 func newVolumeID() volumeID {
 	return volumeID("csi-cifs-" + uuid.NewUUID().String())
 }

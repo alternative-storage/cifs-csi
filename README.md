@@ -33,7 +33,7 @@ cifstestvol
 
 #### NodePublish a volume
 
-**NOTE**: You must stage a volume by above step.
+**NOTE**: You must stage a volume by above step beforehand.
 
 ```
 $ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
@@ -44,7 +44,13 @@ cifstestvol
 
 #### NodeUnpublish a volume
 ```
-$ csc node unpublish --endpoint tcp://127.0.0.1:10000 --target-path /mnt/cifs cifstestvol
+$ csc node unpublish --endpoint tcp://127.0.0.1:10000 --target-path /mnt/cifs-bind cifstestvol
+cifstestvol
+```
+
+#### NodeUnstage a volume
+```
+$ csc node unstage --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs cifstestvol
 cifstestvol
 ```
 
