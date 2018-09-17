@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/golang/glog"
@@ -22,11 +23,41 @@ type nodeServer struct {
 	*csicommon.DefaultNodeServer
 }
 
+type volumeID string
+
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	glog.Infof("stage")
 	var (
 		err error
 	)
+
+	// TODO validate
+	/*
+		if err := validateNodeStageVolumeRequest(req); err != nil {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+	*/
+	// Configuration
+
+	stagingTargetPath := req.GetStagingTargetPath()
+	volId := volumeID(req.GetVolumeId())
+	glog.Infof("cephfs: volume %s is trying to create and mount %s", volId, stagingTargetPath)
+
+	notMnt, err := mount.New("").IsLikelyNotMountPoint(stagingTargetPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(stagingTargetPath, 0750); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+			notMnt = true
+		} else {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+	if !notMnt {
+		glog.Infof("cephfs: volume %s is already mounted to %s, skipping", volId, stagingTargetPath)
+		return &csi.NodeStageVolumeResponse{}, nil
+	}
 
 	ns.userCr, err = getUserCredentials(req.GetNodeStageSecrets())
 
@@ -35,6 +66,26 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 	if ns.userCr.id == "" || ns.userCr.key == "" {
 		return nil, fmt.Errorf("TODO: need to auth")
+	}
+
+	mo := []string{}
+	mo = append(mo, fmt.Sprintf("username=%s", ns.userCr.id))
+	mo = append(mo, fmt.Sprintf("password=%s", ns.userCr.key))
+
+	s := req.GetVolumeAttributes()["server"]
+	ep := req.GetVolumeAttributes()["share"]
+	source := fmt.Sprintf("//%s/%s", s, ep)
+
+	mounter := mount.New("")
+	err = mounter.Mount(source, stagingTargetPath, "cifs", mo)
+	if err != nil {
+		if os.IsPermission(err) {
+			return nil, status.Error(codes.PermissionDenied, err.Error())
+		}
+		if strings.Contains(err.Error(), "invalid argument") {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
@@ -56,32 +107,17 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	if !notMnt {
+		//	glog.Infof("cephfs: volume %s is already bind-mounted to %s", volId, targetPath)
+
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	mo := req.GetVolumeCapability().GetMount().GetMountFlags()
-	if req.GetReadonly() {
-		mo = append(mo, "ro")
-	}
-
-	mo = append(mo, fmt.Sprintf("username=%s", ns.userCr.id))
-	mo = append(mo, fmt.Sprintf("password=%s", ns.userCr.key))
-
-	s := req.GetVolumeAttributes()["server"]
-	ep := req.GetVolumeAttributes()["share"]
-	source := fmt.Sprintf("//%s/%s", s, ep)
-
-	mounter := mount.New("")
-	err = mounter.Mount(source, targetPath, "cifs", mo)
-	if err != nil {
-		if os.IsPermission(err) {
-			return nil, status.Error(codes.PermissionDenied, err.Error())
-		}
-		if strings.Contains(err.Error(), "invalid argument") {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
+	if err = bindMount(req.GetStagingTargetPath(), req.GetTargetPath(), req.GetReadonly()); err != nil {
+		//		glog.Errorf("failed to bind-mount volume %s: %v", volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	//glog.Infof("cephfs: successfuly bind-mounted volume %s to %s", volId, targetPath)
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
@@ -146,4 +182,34 @@ func (ns *nodeServer) NodeUnstageVolume(
 	*csi.NodeUnstageVolumeResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func bindMount(from, to string, readOnly bool) error {
+	if err := execCommandAndValidate("mount", "--bind", from, to); err != nil {
+		return fmt.Errorf("failed to bind-mount %s to %s: %v", from, to, err)
+	}
+
+	if readOnly {
+		if err := execCommandAndValidate("mount", "-o", "remount,ro,bind", to); err != nil {
+			return fmt.Errorf("failed read-only remount of %s: %v", to, err)
+		}
+	}
+
+	return nil
+}
+
+func execCommand(command string, args ...string) ([]byte, error) {
+	glog.V(4).Infof("cephfs: EXEC %s %s", command, args)
+
+	cmd := exec.Command(command, args...)
+	return cmd.CombinedOutput()
+}
+
+func execCommandAndValidate(program string, args ...string) error {
+	out, err := execCommand(program, args...)
+	if err != nil {
+		return fmt.Errorf("cephfs: %s failed with following error: %s\ncephfs: %s output: %s", program, err, program, out)
+	}
+
+	return nil
 }
