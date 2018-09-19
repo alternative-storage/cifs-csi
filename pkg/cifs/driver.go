@@ -15,6 +15,8 @@ const (
 type cifsDriver struct {
 	driver *csicommon.CSIDriver
 
+	server csicommon.NonBlockingGRPCServer
+
 	is *identityServer
 	ns *nodeServer
 	cs *controllerServer
@@ -45,7 +47,7 @@ func NewNodeServer(d *csicommon.CSIDriver) *nodeServer {
 	}
 }
 
-func (fs *cifsDriver) Run(driverName, nodeId, endpoint, volumeMounter string) {
+func (fs *cifsDriver) Run(driverName, nodeId, endpoint string) {
 	glog.Infof("Driver: %v version: %v", driverName, Version)
 
 	fs.driver = csicommon.NewCSIDriver(driverName, Version, nodeId)
@@ -65,7 +67,11 @@ func (fs *cifsDriver) Run(driverName, nodeId, endpoint, volumeMounter string) {
 	fs.ns = NewNodeServer(fs.driver)
 	fs.cs = NewControllerServer(fs.driver)
 
-	server := csicommon.NewNonBlockingGRPCServer()
-	server.Start(endpoint, fs.is, fs.cs, fs.ns)
-	server.Wait()
+	fs.server = csicommon.NewNonBlockingGRPCServer()
+	fs.server.Start(endpoint, fs.is, fs.cs, fs.ns)
+	fs.server.Wait()
+}
+
+func (fs *cifsDriver) Stop() {
+	fs.server.Stop()
 }

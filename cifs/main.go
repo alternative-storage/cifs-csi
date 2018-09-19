@@ -30,10 +30,9 @@ func init() {
 }
 
 var (
-	endpoint      = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	driverName    = flag.String("drivername", "csi-cifsplugin", "name of the driver")
-	nodeId        = flag.String("nodeid", "", "node id")
-	volumeMounter = flag.String("volumemounter", "", "default volume mounter (possible options are 'kernel', 'fuse')")
+	endpoint   = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
+	driverName = flag.String("drivername", "csi-cifsplugin", "name of the driver")
+	nodeId     = flag.String("nodeid", "", "node id")
 )
 
 func main() {
@@ -50,7 +49,7 @@ func main() {
 	}
 
 	driver := cifs.NewCifsDriver()
-	driver.Run(*driverName, *nodeId, *endpoint, *volumeMounter)
+	driver.Run(*driverName, *nodeId, *endpoint)
 
 	os.Exit(0)
 }
