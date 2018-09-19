@@ -143,6 +143,14 @@
   revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
 
 [[projects]]
+  digest = "1:21adc4d8c49ecaed125c5a7e166719dc382f3a8ea7fbf20366845784ed6a791c"
+  name = "github.com/kubernetes-csi/csi-test"
+  packages = ["utils"]
+  pruneopts = "UT"
+  revision = "d6869a2704bb7e603ab294a42fbb893c18b8e46e"
+  version = "v0.3.0-2"
+
+[[projects]]
   branch = "master"
   digest = "1:c486ed8ec89f0702d16043caada5a9ad0be2f639ca33621665d2614582d32154"
   name = "github.com/kubernetes-csi/drivers"
@@ -708,8 +716,10 @@
   input-imports = [
     "github.com/container-storage-interface/spec/lib/go/csi/v0",
     "github.com/golang/glog",
+    "github.com/kubernetes-csi/csi-test/utils",
     "github.com/kubernetes-csi/drivers/pkg/csi-common",
     "github.com/pborman/uuid",
+    "golang.org/x/net/context",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/status",
     "k8s.io/kubernetes/pkg/util/mount",

@@ -9,5 +9,5 @@ before_script:
 - go get github.com/golang/lint/golint
 script:
 - test -z $(gofmt -s -l $GO_FILES)
-- go vet -v $(go list ./... | grep -v /vendor/)
 - make cifsplugin
+- make test
