@@ -4,6 +4,14 @@
 
 [Container Storage Interface (CSI)](https://github.com/container-storage-interface/) driver, provisioner, and attacher for CIFS (SMB, Samba, Windows Share) network filesystems.
 
+## Supported matrix
+
+Client         | Target         | Status         |
+-------------- | -------------- | -------------- |
+Linux          | Linux(Samba)   | WIP            |
+Linux          | Windows        | -              |
+Windows        | Linux(Samba)   | -              |
+Windows        | Windows        | -              |
 
 
 ## Test
