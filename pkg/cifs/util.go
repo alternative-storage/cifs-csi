@@ -51,6 +51,10 @@ func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 		return fmt.Errorf("volume ID missing in request")
 	}
 
+	if req.GetStagingTargetPath() == "" {
+		return fmt.Errorf("staging target path missing in request")
+	}
+
 	if req.GetTargetPath() == "" {
 		return fmt.Errorf("varget path missing in request")
 	}

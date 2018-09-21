@@ -121,7 +121,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if err = bindMount(req.GetStagingTargetPath(), req.GetTargetPath(), req.GetReadonly()); err != nil {
+	if ns.mounter == nil {
+		ns.mounter = mount.New("")
+	}
+	mo := []string{"bind"}
+	if req.GetReadonly() {
+		mo = append(mo, "ro")
+	}
+	if err = ns.mounter.Mount(req.GetStagingTargetPath(), req.GetTargetPath(), "cifs", mo); err != nil {
 		glog.Errorf("failed to bind-mount volume %s: %v", volId, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
