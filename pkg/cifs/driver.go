@@ -47,7 +47,7 @@ func NewNodeServer(d *csicommon.CSIDriver) *nodeServer {
 	}
 }
 
-func (fs *cifsDriver) Run(driverName, nodeId, endpoint string) {
+func (fs *cifsDriver) Init(driverName, nodeId string) {
 	glog.Infof("Driver: %v version: %v", driverName, Version)
 
 	fs.driver = csicommon.NewCSIDriver(driverName, Version, nodeId)
@@ -68,6 +68,9 @@ func (fs *cifsDriver) Run(driverName, nodeId, endpoint string) {
 	fs.cs = NewControllerServer(fs.driver)
 
 	fs.server = csicommon.NewNonBlockingGRPCServer()
+}
+
+func (fs *cifsDriver) Start(endpoint string) {
 	fs.server.Start(endpoint, fs.is, fs.cs, fs.ns)
 	fs.server.Wait()
 }

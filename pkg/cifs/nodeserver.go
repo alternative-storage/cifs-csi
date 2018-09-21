@@ -21,6 +21,8 @@ import (
 type nodeServer struct {
 	userCr *credentials
 	*csicommon.DefaultNodeServer
+
+	mounter mount.Interface
 }
 
 type volumeID string
@@ -70,10 +72,15 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 
 	s := req.GetVolumeAttributes()["server"]
 	ep := req.GetVolumeAttributes()["share"]
+	if s == "" || ep == "" {
+		return nil, fmt.Errorf("TODO: need server or endpoint")
+	}
 	source := fmt.Sprintf("//%s/%s", s, ep)
 
-	mounter := mount.New("")
-	err = mounter.Mount(source, stagingTargetPath, "cifs", mo)
+	if ns.mounter == nil {
+		ns.mounter = mount.New("")
+	}
+	err = ns.mounter.Mount(source, stagingTargetPath, "cifs", mo)
 	if err != nil {
 		if os.IsPermission(err) {
 			return nil, status.Error(codes.PermissionDenied, err.Error())

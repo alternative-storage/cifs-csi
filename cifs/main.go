@@ -49,7 +49,8 @@ func main() {
 	}
 
 	driver := cifs.NewCifsDriver()
-	driver.Run(*driverName, *nodeId, *endpoint)
+	driver.Init(*driverName, *nodeId)
+	driver.Start(*endpoint)
 
 	os.Exit(0)
 }

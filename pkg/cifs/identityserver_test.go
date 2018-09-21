@@ -12,7 +12,8 @@ func TestIdentityServer(t *testing.T) {
 
 	// Setup simple driver
 	d := NewCifsDriver()
-	go d.Run(driverName, nodeId, tcp_ep)
+	d.Init(driverName, nodeId)
+	go d.Start(tcp_ep)
 	defer d.Stop()
 
 	// Setup a connection to the driver
