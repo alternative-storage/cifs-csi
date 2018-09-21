@@ -214,20 +214,6 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
-func bindMount(from, to string, readOnly bool) error {
-	if err := execCommandAndValidate("mount", "--bind", from, to); err != nil {
-		return fmt.Errorf("failed to bind-mount %s to %s: %v", from, to, err)
-	}
-
-	if readOnly {
-		if err := execCommandAndValidate("mount", "-o", "remount,ro,bind", to); err != nil {
-			return fmt.Errorf("failed read-only remount of %s: %v", to, err)
-		}
-	}
-
-	return nil
-}
-
 func execCommand(command string, args ...string) ([]byte, error) {
 	glog.V(4).Infof("cifs: EXEC %s %s", command, args)
 
