@@ -18,7 +18,6 @@ type controllerServer struct {
 }
 
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	glog.Errorf("Create")
 	if err := cs.validateCreateVolumeRequest(req); err != nil {
 		glog.Errorf("CreateVolumeRequest validation failed: %v", err)
 		return nil, err
@@ -59,9 +58,7 @@ func newVolumeID() volumeID {
 	return volumeID("csi-cifs-" + uuid.NewUUID().String())
 }
 
-func (cs *controllerServer) ValidateVolumeCapabilities(
-	ctx context.Context,
-	req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+func (cs *controllerServer) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateVolumeCapabilitiesRequest) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 	r := &csi.ValidateVolumeCapabilitiesResponse{
 		Supported: true,
 	}
