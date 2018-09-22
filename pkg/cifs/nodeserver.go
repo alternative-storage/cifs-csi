@@ -35,13 +35,16 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	if ns.mounter == nil {
+		ns.mounter = mount.New("")
+	}
 	// Configuration
 
 	stagingTargetPath := req.GetStagingTargetPath()
 	volId := volumeID(req.GetVolumeId())
 	glog.Infof("cifs: volume %s is trying to create and mount %s", volId, stagingTargetPath)
 
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(stagingTargetPath)
+	notMnt, err := ns.mounter.IsLikelyNotMountPoint(stagingTargetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(stagingTargetPath, 0750); err != nil {
@@ -77,9 +80,6 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 	}
 	source := fmt.Sprintf("//%s/%s", s, ep)
 
-	if ns.mounter == nil {
-		ns.mounter = mount.New("")
-	}
 	err = ns.mounter.Mount(source, stagingTargetPath, "cifs", mo)
 	if err != nil {
 		if os.IsPermission(err) {
@@ -101,10 +101,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	if ns.mounter == nil {
+		ns.mounter = mount.New("")
+	}
+
 	targetPath := req.GetTargetPath()
 	volId := req.GetVolumeId()
 
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
+	notMnt, err := ns.mounter.IsLikelyNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err := os.MkdirAll(targetPath, 0750); err != nil {
@@ -121,9 +125,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	if ns.mounter == nil {
-		ns.mounter = mount.New("")
-	}
 	mo := []string{"bind"}
 	if req.GetReadonly() {
 		mo = append(mo, "ro")
@@ -148,18 +149,18 @@ type credentials struct {
 	password string
 }
 
-func getCredentials(idField, keyField string, secrets map[string]string) (*credentials, error) {
+func getCredentials(u, p string, secrets map[string]string) (*credentials, error) {
 	var (
 		c  = &credentials{}
 		ok bool
 	)
 
 	if c.username, ok = secrets[username]; !ok {
-		return nil, fmt.Errorf("missing ID field '%s' in secrets", idField)
+		return nil, fmt.Errorf("missing username '%s' in secrets", u)
 	}
 
 	if c.password, ok = secrets[password]; !ok {
-		return nil, fmt.Errorf("missing key field '%s' in secrets", keyField)
+		return nil, fmt.Errorf("missing password '%s' in secrets", p)
 	}
 
 	return c, nil
@@ -174,8 +175,12 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	if ns.mounter == nil {
+		ns.mounter = mount.New("")
+	}
+
 	targetPath := req.GetTargetPath()
-	notMnt, err := mount.New("").IsLikelyNotMountPoint(targetPath)
+	notMnt, err := ns.mounter.IsLikelyNotMountPoint(targetPath)
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -206,11 +211,11 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 	if err := util.UnmountPath(stagingTargetPath, mount.New("")); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	glog.Infof("cifs: successfully umounted volume %s from %s", req.GetVolumeId(), stagingTargetPath)
 
-	os.Remove(stagingTargetPath)
-
-	glog.Infof("cephfs: successfully umounted volume %s from %s", req.GetVolumeId(), stagingTargetPath)
-
+	if err := os.Remove(stagingTargetPath); err != nil {
+		glog.Warningf("cifs: failed to clean up %s: %v", stagingTargetPath, err)
+	}
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
