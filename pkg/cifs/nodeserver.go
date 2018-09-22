@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/golang/glog"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/kubernetes/pkg/util/mount"
@@ -156,11 +154,11 @@ func getCredentials(u, p string, secrets map[string]string) (*credentials, error
 	)
 
 	if c.username, ok = secrets[username]; !ok {
-		return nil, fmt.Errorf("missing username '%s' in secrets", u)
+		return nil, fmt.Errorf("missing username in secrets")
 	}
 
 	if c.password, ok = secrets[password]; !ok {
-		return nil, fmt.Errorf("missing password '%s' in secrets", p)
+		return nil, fmt.Errorf("missing password in secrets")
 	}
 
 	return c, nil
@@ -217,20 +215,4 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 		glog.Warningf("cifs: failed to clean up %s: %v", stagingTargetPath, err)
 	}
 	return &csi.NodeUnstageVolumeResponse{}, nil
-}
-
-func execCommand(command string, args ...string) ([]byte, error) {
-	glog.V(4).Infof("cifs: EXEC %s %s", command, args)
-
-	cmd := exec.Command(command, args...)
-	return cmd.CombinedOutput()
-}
-
-func execCommandAndValidate(program string, args ...string) error {
-	out, err := execCommand(program, args...)
-	if err != nil {
-		return fmt.Errorf("cifs: %s failed with following error: %s\ncifs: %s output: %s", program, err, program, out)
-	}
-
-	return nil
 }
