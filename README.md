@@ -47,7 +47,7 @@ cifstestvol
 ```
 $ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
 $ export CIFS_SHARE="Your CIFS share"
-$  csc node publish --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs --target-path /mnt/cifs-bind cifstestvol
+$ csc node publish --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs --target-path /mnt/cifs-bind cifstestvol
 cifstestvol
 ```
 

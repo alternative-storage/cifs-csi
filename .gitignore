@@ -4,11 +4,10 @@
 /_output
 
 # docker build
-/deploy/rbd/docker/rbdplugin
-/deploy/cephfs/docker/cephfsplugin
+/deploy/cifs/docker/cifsplugin
 
-# rbdplugin executable
-rbdplugin
+# cifs executable
+cifsplugin
 
 # Emacs save files
 *~
