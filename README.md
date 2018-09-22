@@ -34,7 +34,7 @@ $ csc controller create-volume --endpoint tcp://127.0.0.1:10000 testvol
 ```
 $ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
 $ export CIFS_SHARE="Your CIFS share"
-$ export X_CSI_SECRETS=userID=test,userKey=password
+$ export X_CSI_SECRETS=username="YOUR CIFS MOUNT USER",password="YOUR PASSWORD"
 
 $ csc node stage --endpoint tcp://127.0.0.1:10000  --attrib server=$CIFS_SERVER --attrib share=$CIFS_SHARE --staging-target-path=/mnt/cifs cifstestvol
 cifstestvol

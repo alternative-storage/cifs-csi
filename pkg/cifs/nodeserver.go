@@ -19,7 +19,7 @@ import (
 )
 
 type nodeServer struct {
-	userCr *credentials
+	cr *credentials
 	*csicommon.DefaultNodeServer
 
 	mounter mount.Interface
@@ -57,18 +57,18 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 
-	ns.userCr, err = getUserCredentials(req.GetNodeStageSecrets())
+	ns.cr, err = getUserCredentials(req.GetNodeStageSecrets())
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user credentials from node stage secrets: %v", err)
 	}
-	if ns.userCr.id == "" || ns.userCr.key == "" {
+	if ns.cr.username == "" || ns.cr.password == "" {
 		return nil, fmt.Errorf("TODO: need to auth")
 	}
 
 	mo := []string{}
-	mo = append(mo, fmt.Sprintf("username=%s", ns.userCr.id))
-	mo = append(mo, fmt.Sprintf("password=%s", ns.userCr.key))
+	mo = append(mo, fmt.Sprintf("username=%s", ns.cr.username))
+	mo = append(mo, fmt.Sprintf("password=%s", ns.cr.password))
 
 	s := req.GetVolumeAttributes()["server"]
 	ep := req.GetVolumeAttributes()["share"]
@@ -139,13 +139,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 }
 
 const (
-	credUserId  = "userID"
-	credUserKey = "userKey"
+	username = "username"
+	password = "password"
 )
 
 type credentials struct {
-	id  string
-	key string
+	username string
+	password string
 }
 
 func getCredentials(idField, keyField string, secrets map[string]string) (*credentials, error) {
@@ -154,11 +154,11 @@ func getCredentials(idField, keyField string, secrets map[string]string) (*crede
 		ok bool
 	)
 
-	if c.id, ok = secrets[idField]; !ok {
+	if c.username, ok = secrets[username]; !ok {
 		return nil, fmt.Errorf("missing ID field '%s' in secrets", idField)
 	}
 
-	if c.key, ok = secrets[keyField]; !ok {
+	if c.password, ok = secrets[password]; !ok {
 		return nil, fmt.Errorf("missing key field '%s' in secrets", keyField)
 	}
 
@@ -166,7 +166,7 @@ func getCredentials(idField, keyField string, secrets map[string]string) (*crede
 }
 
 func getUserCredentials(secrets map[string]string) (*credentials, error) {
-	return getCredentials(credUserId, credUserKey, secrets)
+	return getCredentials(username, password, secrets)
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {

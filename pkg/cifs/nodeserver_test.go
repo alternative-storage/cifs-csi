@@ -35,7 +35,7 @@ func TestNodeStageVolume(t *testing.T) {
 			req: &csi.NodeStageVolumeRequest{
 				VolumeId:          "testvol",
 				StagingTargetPath: "/tmp/foo",
-				NodeStageSecrets:  map[string]string{"userID": "user", "userKey": "pass"},
+				NodeStageSecrets:  map[string]string{"username": "user", "password": "pass"},
 				VolumeAttributes:  map[string]string{"server": "example.com", "share": "test"},
 			},
 			errors: false,
@@ -44,7 +44,7 @@ func TestNodeStageVolume(t *testing.T) {
 			name: "Fail due to missing volume",
 			req: &csi.NodeStageVolumeRequest{
 				StagingTargetPath: "/tmp/foo",
-				NodeStageSecrets:  map[string]string{"userID": "user", "userKey": "pass"},
+				NodeStageSecrets:  map[string]string{"username": "user", "password": "pass"},
 				VolumeAttributes:  map[string]string{"server": "example.com", "share": "test"},
 			},
 			errors: true,
@@ -54,7 +54,7 @@ func TestNodeStageVolume(t *testing.T) {
 			req: &csi.NodeStageVolumeRequest{
 				VolumeId:          "testvol",
 				StagingTargetPath: "/tmp/foo",
-				NodeStageSecrets:  map[string]string{"userKey": "pass"},
+				NodeStageSecrets:  map[string]string{"password": "pass"},
 				VolumeAttributes:  map[string]string{"server": "example.com", "share": "test"},
 			},
 			errors: true,
@@ -63,7 +63,7 @@ func TestNodeStageVolume(t *testing.T) {
 			name: "Fail due to missing targetpath",
 			req: &csi.NodeStageVolumeRequest{
 				VolumeId:         "testvol",
-				NodeStageSecrets: map[string]string{"userID": "user", "userKey": "pass"},
+				NodeStageSecrets: map[string]string{"username": "user", "password": "pass"},
 				VolumeAttributes: map[string]string{"server": "example.com", "share": "test"},
 			},
 			errors: true,
@@ -73,7 +73,7 @@ func TestNodeStageVolume(t *testing.T) {
 			req: &csi.NodeStageVolumeRequest{
 				VolumeId:          "testvol",
 				StagingTargetPath: "/tmp/foo",
-				NodeStageSecrets:  map[string]string{"userID": "user", "userKey": "pass"},
+				NodeStageSecrets:  map[string]string{"username": "user", "password": "pass"},
 				VolumeAttributes:  map[string]string{"share": "test"},
 			},
 			errors: true,
