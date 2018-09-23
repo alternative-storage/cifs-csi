@@ -1,0 +1,98 @@
+kind: DaemonSet
+apiVersion: apps/v1beta2
+metadata:
+  name: csi-cifsplugin
+spec:
+  selector:
+    matchLabels:
+      app: csi-cifsplugin
+  template:
+    metadata:
+      labels:
+        app: csi-cifsplugin
+    spec:
+      serviceAccount: csi-nodeplugin
+      hostNetwork: true
+      # to use e.g. Rook orchestrated cluster, and mons' FQDN is
+      # resolved through k8s service, set dns policy to cluster first
+      dnsPolicy: ClusterFirstWithHostNet      
+      containers:
+        - name: driver-registrar
+          image: quay.io/k8scsi/driver-registrar:v0.3.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/kubelet/plugins/csi-cifsplugin/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/csi-cifsplugin/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/kubelet/plugins/csi-cifsplugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: csi-cifsplugin
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: quay.io/nak3/cifsplugin:v0.3.0
+          args :
+            - "--nodeid=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--v=5"
+            - "--drivername=csi-cifsplugin"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix://var/lib/kubelet/plugins/csi-cifsplugin/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /var/lib/kubelet/plugins/csi-cifsplugin
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: "Bidirectional"
+            - mountPath: /sys
+              name: host-sys
+            - name: lib-modules
+              mountPath: /lib/modules
+              readOnly: true
+            - name: host-dev
+              mountPath: /dev
+      volumes:
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-cifsplugin
+            type: DirectoryOrCreate
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/
+            type: Directory
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        - name: socket-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi-cifsplugin
+            type: DirectoryOrCreate
+        - name: host-sys
+          hostPath:
+            path: /sys
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: host-dev
+          hostPath:
+            path: /dev
