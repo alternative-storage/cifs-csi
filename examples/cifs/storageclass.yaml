@@ -1,0 +1,13 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-cifs
+provisioner: csi-cifsplugin
+parameters:
+  # The secrets have to contain user and/or CIFS admin credentials.
+  csiProvisionerSecretName: csi-cifs-secret
+  csiProvisionerSecretNamespace: default
+  csiNodeStageSecretName: csi-cifs-secret
+  csiNodeStageSecretNamespace: default
+
+reclaimPolicy: Delete

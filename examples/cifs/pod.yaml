@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: csicifs-demo-pod
+spec:
+  containers:
+   - name: web-server
+     image: nginx
+     volumeMounts:
+       - name: mypvc
+         mountPath: /var/lib/www
+  volumes:
+   - name: mypvc
+     persistentVolumeClaim:
+       claimName: csi-cifs-pvc
+       readOnly: false
+
