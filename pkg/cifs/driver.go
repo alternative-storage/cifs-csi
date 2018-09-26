@@ -2,6 +2,7 @@ package cifs
 
 import (
 	"os"
+	"path"
 
 	"github.com/golang/glog"
 
@@ -49,12 +50,23 @@ func NewNodeServer(d *csicommon.CSIDriver) *nodeServer {
 	}
 }
 
+func createPersistentStorage(persistentStoragePath string) error {
+	return os.MkdirAll(persistentStoragePath, os.FileMode(0755))
+}
+
 func (fs *cifsDriver) Init(driverName, nodeId string) {
 	glog.Infof("Driver: %v version: %v", driverName, Version)
 
-	if err := os.MkdirAll(controllerCacheRoot, 0755); err != nil {
-		glog.Fatalf("cifs: failed to create %s: %v", controllerCacheRoot, err)
-		return
+	if err := createPersistentStorage(path.Join(PluginFolder, "controller")); err != nil {
+		glog.Fatalf("failed to create persistent storage for controller: %v", err)
+	}
+
+	if err := createPersistentStorage(path.Join(PluginFolder, "node")); err != nil {
+		glog.Fatalf("failed to create persistent storage for node: %v", err)
+	}
+
+	if err := createPersistentStorage(path.Join(PluginFolder, "controller", "plugin-cache")); err != nil {
+		glog.Fatalf("failed to create persistent storage for controllercache: %v", err)
 	}
 
 	if err := loadControllerCache(); err != nil {

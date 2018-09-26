@@ -8,6 +8,7 @@ before_script:
 - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
 - go get github.com/golang/lint/golint
 script:
+- sudo mkdir -p /var/lib/kubelet/plugins/csi-cifsplugin && sudo chmod 777 -R /var/lib/kubelet/plugins/csi-cifsplugin
 - test -z $(gofmt -s -l $GO_FILES)
 - make cifsplugin
 - make test
