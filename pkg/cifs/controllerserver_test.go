@@ -12,6 +12,7 @@ func TestCreateVolume(t *testing.T) {
 	// Setup simple driver
 	d := NewCifsDriver()
 	d.Init(driverName, nodeId)
+	d.cs.commander = &fakeCommander{}
 
 	go d.Start(tcp_ep)
 	defer d.Stop()
@@ -32,10 +33,20 @@ func TestCreateVolume(t *testing.T) {
 		{
 			name: "Success",
 			req: &csi.CreateVolumeRequest{
-				Name: "testvol",
+				ControllerCreateSecrets: map[string]string{"admin_name": "user", "admin_password": "pass"},
+				Parameters:              map[string]string{"server": "192.168.122.1"},
+				Name:                    "testvol",
 			},
 			errors: false,
 			expId:  "foo",
+		},
+		{
+			name: "Fail due to missing password",
+			req: &csi.CreateVolumeRequest{
+				ControllerCreateSecrets: map[string]string{"admin_name": "user"},
+				Name: "testvol",
+			},
+			errors: true,
 		},
 	}
 
@@ -49,16 +60,19 @@ func TestCreateVolume(t *testing.T) {
 		if err == nil && tc.errors {
 			t.Errorf("%s: expected error, but not got any error", tc.name)
 		}
-		if res.Volume.Id == "" {
+		if err == nil && res.Volume.Id == "" {
 			t.Errorf("%s: expected volume ID", tc.name)
 		}
 	}
 }
 
+const testVID = "csi-cifs-testvol"
+
 func TestDeleteVolume(t *testing.T) {
 	// Setup simple driver
 	d := NewCifsDriver()
 	d.Init(driverName, nodeId)
+	d.cs.commander = &fakeCommander{}
 
 	go d.Start(tcp_ep)
 	defer d.Stop()
@@ -70,6 +84,12 @@ func TestDeleteVolume(t *testing.T) {
 	}
 	defer conn.Close()
 
+	volOptions := &volumeOptions{Server: "192.168.122.1", Share: "testshare"}
+
+	if err = ctrCache.insert(&controllerCacheEntry{VolOptions: *volOptions, VolumeID: volumeID(testVID)}); err != nil {
+		t.Errorf("failed to store a cache entry for volume %s: %v", testVID, err)
+	}
+
 	tests := []struct {
 		name   string
 		req    *csi.DeleteVolumeRequest
@@ -79,7 +99,8 @@ func TestDeleteVolume(t *testing.T) {
 		{
 			name: "Success",
 			req: &csi.DeleteVolumeRequest{
-				VolumeId: "csi-cifs-testvol",
+				VolumeId:                testVID,
+				ControllerDeleteSecrets: map[string]string{"admin_name": "user", "admin_password": "pass"},
 			},
 			errors: false,
 		},

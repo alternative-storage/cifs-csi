@@ -26,7 +26,9 @@ $ csc identity plugin-info --endpoint tcp://127.0.0.1:10000
 
 #### Create a volume
 ```
-$ csc controller create-volume --endpoint tcp://127.0.0.1:10000 testvol
+$ export X_CSI_SECRETS=admin_name="YOUR CIFS ADMIN USER",admin_password="YOUR CIFS ADMIN PASSWORD"
+
+$ csc controller --endpoint tcp://127.0.0.1:10000 create-volume testvol --params server=$CIFS_SERVER --params path="/tmp"
 ```
 
 
@@ -62,6 +64,14 @@ cifstestvol
 $ csc node unstage --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs cifstestvol
 cifstestvol
 ```
+
+#### Delete a volume
+```
+$ export X_CSI_SECRETS=admin_name="YOUR CIFS ADMIN USER",admin_password="YOUR CIFS ADMIN PASSWORD"
+
+$ csc controller --endpoint tcp://127.0.0.1:10000 delete-volume
+```
+
 
 #### Get NodeID
 ```

@@ -140,6 +140,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 const (
 	username = "username"
 	password = "password"
+
+	admin_name     = "admin_name"
+	admin_password = "admin_password"
 )
 
 type credentials struct {
@@ -153,11 +156,11 @@ func getCredentials(u, p string, secrets map[string]string) (*credentials, error
 		ok bool
 	)
 
-	if c.username, ok = secrets[username]; !ok {
+	if c.username, ok = secrets[u]; !ok {
 		return nil, fmt.Errorf("missing username in secrets")
 	}
 
-	if c.password, ok = secrets[password]; !ok {
+	if c.password, ok = secrets[p]; !ok {
 		return nil, fmt.Errorf("missing password in secrets")
 	}
 
@@ -166,6 +169,10 @@ func getCredentials(u, p string, secrets map[string]string) (*credentials, error
 
 func getUserCredentials(secrets map[string]string) (*credentials, error) {
 	return getCredentials(username, password, secrets)
+}
+
+func getAdminCredentials(secrets map[string]string) (*credentials, error) {
+	return getCredentials(admin_name, admin_password, secrets)
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {

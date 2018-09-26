@@ -1,6 +1,8 @@
 package cifs
 
 import (
+	"os"
+
 	"github.com/golang/glog"
 
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
@@ -49,6 +51,15 @@ func NewNodeServer(d *csicommon.CSIDriver) *nodeServer {
 
 func (fs *cifsDriver) Init(driverName, nodeId string) {
 	glog.Infof("Driver: %v version: %v", driverName, Version)
+
+	if err := os.MkdirAll(controllerCacheRoot, 0755); err != nil {
+		glog.Fatalf("cifs: failed to create %s: %v", controllerCacheRoot, err)
+		return
+	}
+
+	if err := loadControllerCache(); err != nil {
+		glog.Errorf("cifs: failed to read volume cache: %v", err)
+	}
 
 	fs.driver = csicommon.NewCSIDriver(driverName, Version, nodeId)
 	if fs.driver == nil {

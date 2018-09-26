@@ -2,8 +2,9 @@ package cifs
 
 import (
 	"fmt"
+	"os/exec"
 
-	//"github.com/golang/glog"
+	"github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -83,4 +84,45 @@ func validateNodeUnstageVolumeRequest(req *csi.NodeUnstageVolumeRequest) error {
 		return fmt.Errorf("staging target path missing in request")
 	}
 	return nil
+}
+
+type Interface interface {
+	execCommand() ([]byte, error)
+	execCommandAndValidate() error
+}
+
+var _ Interface = &fakeCommander{}
+var _ Interface = &commander{}
+
+type commander struct {
+	cmd     string
+	options []string
+}
+
+type fakeCommander struct {
+	commander
+}
+
+func (c *commander) execCommand() ([]byte, error) {
+	glog.V(4).Infof("cifs: EXEC %s %s", c.cmd, c.options)
+
+	cmd := exec.Command(c.cmd, c.options...)
+	return cmd.CombinedOutput()
+}
+
+func (c *commander) execCommandAndValidate() error {
+	out, err := c.execCommand()
+	if err != nil {
+		return fmt.Errorf("cifs: %s failed with following error: %s\ncifs: %s output: %s", c.cmd, err, c.cmd, out)
+	}
+
+	return nil
+}
+
+func (c *fakeCommander) execCommandAndValidate() error {
+	return nil
+}
+
+func (c *fakeCommander) execCommand() ([]byte, error) {
+	return nil, nil
 }
