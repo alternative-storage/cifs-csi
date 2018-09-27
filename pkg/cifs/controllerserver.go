@@ -46,21 +46,22 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	}
 	adminpass := fmt.Sprintf("%s%%%s", cs.cr.username, cs.cr.password)
 	// TODO port?
-	// TODO debug level -d
-
+	debug := "1"
+	if glog.V(4) {
+		debug = "4"
+	}
 	if cs.commander == nil {
 		// $ net rpc share add SHARE_NAME=/PATH/TO/SHARE COMMENT -S server -d 4
 		args := []string{
 			"rpc", "share", "add", sharep, "\"test comment\"",
-			"-S", volOptions.Server, "-d", "4", "-U", adminpass,
+			"-S", volOptions.Server, "-d", debug, "-U", adminpass,
 		}
 		cs.commander = &commander{cmd: "net", options: args}
 	}
 	if err := cs.commander.execCommandAndValidate(); err != nil {
 		return nil, err
 	}
-	// TODO
-	cs.commander = nil
+	defer func() { cs.commander = nil }()
 
 	// TODO: Setting quota and attributes
 
@@ -116,25 +117,27 @@ func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVol
 		return nil, fmt.Errorf("failed to get admin credentials from create volume secrets: %v", err)
 	}
 	adminpass := fmt.Sprintf("%s%%%s", cs.cr.username, cs.cr.password)
-	// TODO port?
-	// TODO debug level -d
 
+	// TODO port?
+
+	debug := "1"
+	if glog.V(5) {
+		debug = "4"
+	}
 	if cs.commander == nil {
 		// $ net rpc share delete $SHARE -S $SERVER -U root%xxx
 		args := []string{
 			"rpc", "share", "delete", ent.VolOptions.Share,
-			"-S", ent.VolOptions.Server, "-d", "4", "-U", adminpass,
+			"-S", ent.VolOptions.Server, "-d", debug, "-U", adminpass,
 		}
 		cs.commander = &commander{cmd: "net", options: args}
 	}
+	defer func() { cs.commander = nil }()
 	if err := cs.commander.execCommandAndValidate(); err != nil {
 		return nil, err
 	}
-	// TODO
-	cs.commander = nil
 
 	return &csi.DeleteVolumeResponse{}, nil
-
 }
 
 func newVolumeID() volumeID {

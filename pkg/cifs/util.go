@@ -31,29 +31,9 @@ func (cs *controllerServer) validateDeleteVolumeRequest(req *csi.DeleteVolumeReq
 	return nil
 }
 
-func validateNodeStageVolumeRequest(req *csi.NodeStageVolumeRequest) error {
-	if req.GetVolumeId() == "" {
-		return fmt.Errorf("volume ID missing in request")
-	}
-
-	if req.GetStagingTargetPath() == "" {
-		return fmt.Errorf("staging target path missing in request")
-	}
-
-	if req.GetNodeStageSecrets() == nil || len(req.GetNodeStageSecrets()) == 0 {
-		return fmt.Errorf("stage secrets cannot be nil or empty")
-	}
-
-	return nil
-}
-
 func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 	if req.GetVolumeId() == "" {
 		return fmt.Errorf("volume ID missing in request")
-	}
-
-	if req.GetStagingTargetPath() == "" {
-		return fmt.Errorf("staging target path missing in request")
 	}
 
 	if req.GetTargetPath() == "" {
@@ -72,17 +52,6 @@ func validateNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) err
 		return fmt.Errorf("target path missing in request")
 	}
 
-	return nil
-}
-
-func validateNodeUnstageVolumeRequest(req *csi.NodeUnstageVolumeRequest) error {
-	if req.GetVolumeId() == "" {
-		return fmt.Errorf("volume ID missing in request")
-	}
-
-	if req.GetStagingTargetPath() == "" {
-		return fmt.Errorf("staging target path missing in request")
-	}
 	return nil
 }
 

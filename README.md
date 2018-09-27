@@ -16,7 +16,11 @@ Windows        | Windows        | -              |
 
 
 ## Test
+
+NOTE: First, you must change your samba server to accept `net rpc {add,delete}`. Please refer to [example steps](https://github.com/alternative-storage/cifs-csi/blob/master/examples/samba/README.md)
+
 Get ```csc``` tool from https://github.com/rexray/gocsi/tree/master/csc
+
 
 #### Get plugin info
 ```
@@ -28,40 +32,27 @@ $ csc identity plugin-info --endpoint tcp://127.0.0.1:10000
 ```
 $ export X_CSI_SECRETS=admin_name="YOUR CIFS ADMIN USER",admin_password="YOUR CIFS ADMIN PASSWORD"
 
-$ csc controller --endpoint tcp://127.0.0.1:10000 create-volume testvol --params server=$CIFS_SERVER --params path="/tmp"
-```
-
-
-#### NodeStage a volume
-```
-$ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
-$ export CIFS_SHARE="Your CIFS share"
-$ export X_CSI_SECRETS=username="YOUR CIFS MOUNT USER",password="YOUR PASSWORD"
-
-$ csc node stage --endpoint tcp://127.0.0.1:10000  --attrib server=$CIFS_SERVER --attrib share=$CIFS_SHARE --staging-target-path=/mnt/cifs cifstestvol
-cifstestvol
+$ csc controller --endpoint tcp://127.0.0.1:10000 create-volume \
+                 --params server=$CIFS_SERVER --params path="/tmp" \
+                 testvol
+csi-cifs-9bd0415d-c226-11e8-8086-54e1ad486e52
 ```
 
 #### NodePublish a volume
 
-**NOTE**: You must stage a volume by above step beforehand.
-
 ```
 $ export CIFS_SERVER="Your Server IP (Ex: 10.10.10.10)"
-$ export CIFS_SHARE="Your CIFS share"
-$ csc node publish --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs --target-path /mnt/cifs-bind cifstestvol
-cifstestvol
+$ csc node publish --endpoint tcp://127.0.0.1:10000 \
+                 --target-path /mnt/cifs \
+                 --attrib server=192.168.121.127  csi-cifs-9bd0415d-c226-11e8-8086-54e1ad486e52
+csi-cifs-9bd0415d-c226-11e8-8086-54e1ad486e52
 ```
 
 #### NodeUnpublish a volume
 ```
-$ csc node unpublish --endpoint tcp://127.0.0.1:10000 --target-path /mnt/cifs-bind cifstestvol
-cifstestvol
-```
-
-#### NodeUnstage a volume
-```
-$ csc node unstage --endpoint tcp://127.0.0.1:10000 --staging-target-path /mnt/cifs cifstestvol
+$ csc node unpublish --endpoint tcp://127.0.0.1:10000 \
+                    --target-path /mnt/cifs \
+                    csi-cifs-9bd0415d-c226-11e8-8086-54e1ad486e52 
 cifstestvol
 ```
 
@@ -69,9 +60,8 @@ cifstestvol
 ```
 $ export X_CSI_SECRETS=admin_name="YOUR CIFS ADMIN USER",admin_password="YOUR CIFS ADMIN PASSWORD"
 
-$ csc controller --endpoint tcp://127.0.0.1:10000 delete-volume
+$ csc controller --endpoint tcp://127.0.0.1:10000 delete-volume csi-cifs-9bd0415d-c226-11e8-8086-54e1ad486e52
 ```
-
 
 #### Get NodeID
 ```
